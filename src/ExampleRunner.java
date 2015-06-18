@@ -10,12 +10,12 @@ import javax.swing.JPanel;
 
 
 @SuppressWarnings("serial")
-public class TowerDefense extends JFrame implements Runnable{
+public class ExampleRunner extends JFrame implements Runnable{
 	
 	JPanel canvas;
 	PathFinder pathFinder;
 	
-	public TowerDefense(){
+	public ExampleRunner(){
 		
 		int width = 800, height = 600;
 		int rows = height/50;
@@ -105,7 +105,7 @@ public class TowerDefense extends JFrame implements Runnable{
 	}
 
 	public static void main(String[] args) {
-		new TowerDefense();
+		new ExampleRunner();
 	}
 	
 	@Override
