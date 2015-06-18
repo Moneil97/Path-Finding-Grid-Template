@@ -9,8 +9,21 @@ public class PathFinder{
 	Cell[][] grid;
 	Cell end, start;
 	List<Cell> shortest = new ArrayList<Cell>();
+	private boolean allowDiagonal, allowCornerCutting;
 	
-	public PathFinder(Cell[][] grid, Cell start, Cell end) {
+	/**
+	 * Uses the A* Algorithm to find shortest path
+	 * @param grid 2D Array of Cells
+	 * @param start Starting Cell
+	 * @param end Ending Cell
+	 * @param allowDiagonal Allows shortest path to use diagonal movements
+	 * @param allowCornerCutting Allows shortest path to cut corners (Only affected if diagonal movements are allowed)
+	 */
+	
+	public PathFinder(Cell[][] grid, Cell start, Cell end, boolean allowDiagonal, boolean allowCornerCutting) {
+		
+		setAllowDiagonal(allowDiagonal);
+		setAllowCornerCutting(allowCornerCutting);
 		
 		this.grid = grid;
 		
@@ -33,6 +46,10 @@ public class PathFinder{
 		end.setType(CellTypes.END);
 		
 	}
+	
+	//gCost -dist from start //needs to get gCost of parent and add to it
+	//hCost -dist to end //should stay same
+	//fCost -total
 	
 	public List<Cell> calculateShortestPath(){
 		
@@ -80,42 +97,105 @@ public class PathFinder{
 				return shortest;
 			}
 			
-			
-			for (int r=Math.max(0, current.getRow()-1); r <= Math.min(grid.length-1, current.getRow()+1); r++){
-				for (int c=Math.max(0, current.getCol()-1); c <= Math.min(grid[r].length-1 ,current.getCol()+1); c++){
-					
-					Cell neighbor = grid[r][c];
-					
-					if (checkIfCorner(current, neighbor))
-						continue;
-					
-					if ((neighbor.getType() == CellTypes.EMPTY || neighbor.getType() == CellTypes.END) && !closed.contains(neighbor)){
+			if (allowDiagonal){
+				for (int r=Math.max(0, current.getRow()-1); r <= Math.min(grid.length-1, current.getRow()+1); r++){
+					for (int c=Math.max(0, current.getCol()-1); c <= Math.min(grid[r].length-1 ,current.getCol()+1); c++){
 						
-						neighbor.hCost = getCostBetween(neighbor, end);
+						Cell neighbor = grid[r][c];
 						
-						double newGCost = current.gCost + getCostBetween(current, neighbor);
-						if (neighbor.gCost > newGCost){
-							neighbor.gCost = newGCost;
-							neighbor.parentCell = current;
-							if (!open.contains(neighbor))
-								open.add(neighbor);
+						if (!allowCornerCutting && checkIfCorner(current, neighbor))
+							continue;
+						
+						if ((neighbor.getType() == CellTypes.EMPTY || neighbor.getType() == CellTypes.END) && !closed.contains(neighbor)){
+							
+							neighbor.hCost = getCostBetween(neighbor, end);
+							
+							double newGCost = current.gCost + getCostBetween(current, neighbor);
+							if (neighbor.gCost > newGCost){
+								neighbor.gCost = newGCost;
+								neighbor.parentCell = current;
+								if (!open.contains(neighbor))
+									open.add(neighbor);
+							}
+							
+							open.remove(neighbor);
+							neighbor.fCost = neighbor.gCost + neighbor.hCost;
+							open.add(neighbor);
+							
 						}
-						
-						open.remove(neighbor);
-						neighbor.fCost = neighbor.gCost + neighbor.hCost;
-						open.add(neighbor);
-						
 					}
 				}
 			}
+			else{
+				
+				int row = current.getRow();
+				int col = current.getCol();
+				
+				for (RandC rc : new RandC[]{new RandC(row,col+1),new RandC(row,col-1),new RandC(row+1,col),new RandC(row-1,col)}){
+					
+					int r = rc.getRow();
+					int c = rc.getCol();
+					
+					if (r < 0 || r > grid.length-1 || c < 0 || c > grid[r].length-1)
+						continue;
+					
+						Cell neighbor = grid[r][c];
+						
+						if ((neighbor.getType() == CellTypes.EMPTY || neighbor.getType() == CellTypes.END) && !closed.contains(neighbor)){
+							
+							neighbor.hCost = getCostBetween(neighbor, end);
+							
+							double newGCost = current.gCost + getCostBetween(current, neighbor);
+							if (neighbor.gCost > newGCost){
+								neighbor.gCost = newGCost;
+								neighbor.parentCell = current;
+								if (!open.contains(neighbor))
+									open.add(neighbor);
+							}
+							
+							open.remove(neighbor);
+							neighbor.fCost = neighbor.gCost + neighbor.hCost;
+							open.add(neighbor);
+							
+						}
+					
+				}
+				
+			}
+			
+			
 			
 		}
 		
 	}
 	
-	//gCost -dist from start //needs to get gCost of parent and add to it
-	//hCost -dist to end //should stay same
-	//fCost -total
+	class RandC {
+		
+		private int row;
+		private int col;
+		
+		public RandC(int row, int col){
+			this.setRow(row);
+			this.setCol(col);
+		}
+
+		int getRow() {
+			return row;
+		}
+
+		void setRow(int row) {
+			this.row = row;
+		}
+
+		int getCol() {
+			return col;
+		}
+
+		void setCol(int col) {
+			this.col = col;
+		}
+		
+	}
 
 	private boolean checkIfCorner(Cell current, Cell neighbor) {
 		
@@ -204,7 +284,7 @@ public class PathFinder{
 					
 					Cell neighbor = grid[r][c];
 					
-					if (checkIfCorner(current, neighbor))
+					if (allowDiagonal && !allowCornerCutting && checkIfCorner(current, neighbor))
 						continue;
 					
 					if ((neighbor.getType() == CellTypes.EMPTY || neighbor.getType() == CellTypes.END) && !closed.contains(neighbor)){
@@ -219,14 +299,29 @@ public class PathFinder{
 		}
 	}
 	
-	
-//	private void print2D(Object[][] array){
-//		for (Object[] row : array)
-//		    System.out.println(Arrays.toString(row));
-//	}
-	
 	public void say(Object s) {
 		System.out.println(this.getClass().getName() + ": " + s);
 	}
+
+	boolean isAllowDiagonal() {
+		return allowDiagonal;
+	}
+
+	void setAllowDiagonal(boolean allowDiagonal) {
+		this.allowDiagonal = allowDiagonal;
+	}
+
+	boolean isAllowCornerCutting() {
+		return allowCornerCutting;
+	}
+
+	void setAllowCornerCutting(boolean allowCornerCutting) {
+		this.allowCornerCutting = allowCornerCutting;
+	}
+	
+//	private void print2D(Object[][] array){
+//	for (Object[] row : array)
+//	    System.out.println(Arrays.toString(row));
+//}
 
 }

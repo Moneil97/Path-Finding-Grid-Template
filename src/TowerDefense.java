@@ -36,7 +36,7 @@ public class TowerDefense extends JFrame implements Runnable{
 		for (int i=0; i < rows/2;i++)
 			cells[i][8].setType(CellTypes.BARRIER);
 		
-		pathFinder = new PathFinder(cells, cells[0][0], cells[rows-1][cols-1]);
+		pathFinder = new PathFinder(cells, cells[0][0], cells[rows-1][cols-1], true, false);
 		
 		this.add(canvas = new JPanel(){
 			@Override
